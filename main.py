@@ -19,9 +19,6 @@ from backends.tabular import query_tabular
 # Load environment variables
 load_dotenv()
 
-print("Current folder:", os.getcwd())
-print("API Key:", os.getenv("GROQ_API_KEY"))
-
 # Create Groq client
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
@@ -93,6 +90,33 @@ def run(query: str) -> None:
     answer = answer_with_context(query, context)
 
     print(f"\n✅ Answer:\n{answer}")
+
+
+def process_query(query: str):
+    """
+    Returns the memory type, retrieved context,
+    and final AI answer.
+
+    This function is used by the Streamlit app.
+    """
+
+    # Step 1: Classify
+    memory_type = classify_query(query)
+
+    # Step 2: Retrieve
+    if memory_type == "rag":
+        context = query_rag(query)
+
+    elif memory_type == "graph":
+        context = query_graph(query)
+
+    else:
+        context = query_tabular(query)
+
+    # Step 3: Generate answer
+    answer = answer_with_context(query, context)
+
+    return memory_type, context, answer
 
 
 if __name__ == "__main__":

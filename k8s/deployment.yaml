@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: ai-memory-router
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: ai-memory-router
+
+  template:
+    metadata:
+      labels:
+        app: ai-memory-router
+
+    spec:
+      containers:
+      - name: ai-memory-router
+
+        image: nehamupparthy/ai-memory-router:v1
+
+        ports:
+        - containerPort: 8000
+
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: groq-secret
+              key: GROQ_API_KEY

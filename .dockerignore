@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Git
+.git/
+.gitignore
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Documentation
+docs/
+
+# Streamlit app (not needed for Kubernetes deployment)
+app.py
