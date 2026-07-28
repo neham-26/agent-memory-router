@@ -1,0 +1,278 @@
+Kubernetes Deployment Learning Notes
+Project Name
+
+AI Memory Router using FastAPI, Docker & Kubernetes
+
+Goal
+
+The final goal is to deploy our AI Memory Router inside a Kubernetes cluster so that users can access it through HTTP requests.
+
+Final Architecture:
+
+User
+   │
+Browser/Postman
+   │
+HTTP Request
+   │
+Kubernetes Service
+   │
+FastAPI Application
+   │
+AI Memory Router
+   │
+├── RAG Backend
+├── Graph Backend
+└── Tabular Backend
+   │
+Groq API
+Why can't we deploy main.py directly?
+
+Our original project works like this:
+
+python main.py
+
+Execution flow:
+
+Program Starts
+      │
+Reads predefined queries
+      │
+Calls Groq
+      │
+Prints output
+      │
+Program Ends
+
+This is called a console (terminal) application.
+
+The problem is that Kubernetes expects applications to keep running and wait for client requests.
+
+Why do we need an API?
+
+Instead of running the program once and exiting, we want it to behave like this:
+
+Application Starts
+      │
+Waits for Requests
+      │
+User Sends Query
+      │
+Processes Query
+      │
+Returns Response
+      │
+Waits for Next User
+
+This is exactly what a REST API does.
+
+Why FastAPI?
+
+FastAPI is a Python framework used to build REST APIs.
+
+It acts as the communication layer between the user and our AI application.
+
+Instead of:
+
+User
+   │
+main.py
+
+we now have:
+
+User
+   │
+FastAPI
+   │
+process_query()
+
+FastAPI receives HTTP requests, calls our AI logic, and returns JSON responses.
+
+Why did we create process_query()?
+
+Originally, our AI logic was inside run().
+
+run(query)
+
+run() only prints the answer to the terminal.
+
+FastAPI cannot use printed output.
+
+So we created:
+
+process_query(query)
+
+Instead of printing, it returns:
+
+memory type
+retrieved context
+AI answer
+
+This makes the logic reusable by any application (FastAPI today, other interfaces in the future).
+
+Why did we create api.py?
+
+api.py is the entry point for our web service.
+
+Responsibilities:
+
+Start FastAPI.
+Define API endpoints.
+Accept user requests.
+Call process_query().
+Return JSON.
+
+We kept the AI logic in main.py and the web layer in api.py. This separation makes the project cleaner and easier to maintain.
+
+API Endpoints
+GET /
+
+Purpose:
+
+Checks whether the server is running.
+
+Response:
+
+{
+  "message": "Welcome to the AI Memory Router API!"
+}
+POST /ask
+
+Purpose:
+
+Accepts a user query.
+
+Example Request:
+
+{
+    "query":"What did user 42 order?"
+}
+
+Example Response:
+
+{
+    "memory_type":"tabular",
+    "context":"...",
+    "answer":"..."
+}
+What is JSON?
+
+JSON (JavaScript Object Notation) is the standard format used to exchange data between clients and servers.
+
+Example:
+
+{
+    "query":"Hello"
+}
+
+FastAPI automatically converts this into a Python object.
+
+What is Swagger UI?
+
+FastAPI automatically generates interactive API documentation.
+
+URL:
+
+http://127.0.0.1:8000/docs
+
+Advantages:
+
+Test APIs without Postman.
+View all available endpoints.
+See request and response formats.
+What did we test?
+
+We verified that:
+
+FastAPI starts successfully.
+The GET endpoint works.
+The POST endpoint accepts JSON.
+process_query() is called.
+The router selects the correct backend.
+Groq generates an answer.
+The response is returned as JSON.
+
+This confirmed that our AI application now behaves like a web service.
+
+Architecture Before FastAPI
+User
+   │
+python main.py
+   │
+Router
+   │
+├── RAG
+├── Graph
+└── Tabular
+   │
+Groq
+Architecture After FastAPI
+User
+   │
+Browser / Swagger / Postman
+   │
+FastAPI
+   │
+process_query()
+   │
+Router
+   │
+├── RAG
+├── Graph
+└── Tabular
+   │
+Groq
+   │
+JSON Response
+Why is this important for Kubernetes?
+
+Kubernetes deploys services, not one-time terminal programs.
+
+FastAPI turns our AI project into a service that:
+
+starts once,
+keeps running,
+waits for requests,
+processes them,
+returns responses.
+
+That makes it suitable for containerization and deployment.
+
+Current Progress
+AI Memory Router
+        │
+        ▼
+Terminal Application        ✅ Completed
+
+        │
+        ▼
+FastAPI REST API            ✅ Completed
+
+        │
+        ▼
+Docker Container            ⏳ Next
+
+        │
+        ▼
+Docker Hub                  ⏳
+
+        │
+        ▼
+Kubernetes Deployment       ⏳
+
+        │
+        ▼
+Kubernetes Service          ⏳
+
+        │
+        ▼
+Secrets & ConfigMaps        ⏳
+
+        │
+        ▼
+Scaling & Rolling Updates   ⏳
+Interview Summary
+
+If an interviewer asks what you've done so far, you can confidently say:
+
+"I first developed an AI Memory Router that routes queries to RAG, Graph, or Tabular memory backends. Since Kubernetes is designed to run long-lived services rather than terminal applications, I converted the project into a REST API using FastAPI. I separated the AI logic from the API layer by introducing a reusable process_query() function and created HTTP endpoints to receive user queries and return structured JSON responses. I verified the API using FastAPI's Swagger UI, making the application ready for containerization with Docker and later deployment on Kubernetes."
